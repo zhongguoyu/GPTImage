@@ -1,0 +1,8 @@
+# Optional static frontend; browser calls ChatGPT2API directly.
+services:
+  infinite-canvas:
+    image: ghcr.io/basketikun/infinite-canvas@sha256:b622492dc8cf58713194a3ffa27909f9ac9290ba893dc3c23d049b2b7700b1ba
+    restart: unless-stopped
+    ports:
+      - '127.0.0.1:${INFINITE_CANVAS_PORT:-3002}:3000'
+    networks: [ai]

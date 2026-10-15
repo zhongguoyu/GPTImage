@@ -1,0 +1,41 @@
+# Host nginx template. Replace example domains/certificate paths before enabling.
+# Requires valid TLS certificates. Application ports stay on loopback.
+server {
+    listen 443 ssl;
+    server_name sub2.example.com;
+    ssl_certificate /etc/letsencrypt/live/sub2.example.com/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/sub2.example.com/privkey.pem;
+    client_max_body_size 256m;
+    location / {
+        proxy_pass http://127.0.0.1:8080;
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_buffering off;
+        proxy_read_timeout 900s;
+        proxy_send_timeout 900s;
+    }
+}
+server {
+    listen 443 ssl;
+    server_name images.example.com;
+    ssl_certificate /etc/letsencrypt/live/images.example.com/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/images.example.com/privkey.pem;
+    client_max_body_size 256m;
+    location / {
+        proxy_pass http://127.0.0.1:3000;
+        proxy_http_version 1.1;
+        proxy_set_header Host $http_host;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_buffering off;
+        proxy_read_timeout 900s;
+        proxy_send_timeout 900s;
+    }
+}
+server {
+    listen 80;
+    server_name sub2.example.com images.example.com;
+    return 301 https://$host$request_uri;
+}

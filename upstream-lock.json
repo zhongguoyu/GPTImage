@@ -1,0 +1,29 @@
+{
+  "chatgpt2api": {
+    "repository": "https://github.com/iamdurant/chatgpt2api-personal",
+    "commit": "d4d919868df413a0abccec27d7f6cf2aae588da0",
+    "license": "MIT",
+    "local_modifications": true,
+    "path": "sources/chatgpt2api"
+  },
+  "sub2api": {
+    "repository": "https://github.com/Wei-Shaw/sub2api",
+    "commit": "5de5e2bed035d43591a2e10e51f420ef6a84eb98",
+    "version": "0.2.4",
+    "image": "weishaw/sub2api@sha256:ccf47a1c62e355f51f896e489f8253e119fe4101b103cd701ba458cc6c6f0f77",
+    "license": "LGPL-3.0",
+    "local_modifications": true,
+    "path": "sources/sub2api",
+    "modification_note": "Source snapshot removes bundled Google OAuth credentials; default official image remains unchanged."
+  },
+  "infinite_canvas": {
+    "repository": "https://github.com/basketikun/infinite-canvas",
+    "commit": "3a6b64b602ad062b29fac66902ed18a7ef5fd9dc",
+    "version": "v0.20.0",
+    "image": "ghcr.io/basketikun/infinite-canvas@sha256:b622492dc8cf58713194a3ffa27909f9ac9290ba893dc3c23d049b2b7700b1ba",
+    "license": "MIT",
+    "local_modifications": false,
+    "distribution": "official container image; source not vendored",
+    "deployment": "compose.canvas.yaml"
+  }
+}

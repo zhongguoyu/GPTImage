@@ -1,0 +1,11 @@
+# Optional: build the bundled Sub2API source instead of using the pinned image.
+# docker compose -f compose.yaml -f compose.source.yaml build sub2api
+# docker compose -f compose.yaml -f compose.source.yaml up -d
+services:
+  sub2api:
+    image: gptimage/sub2api:local
+    build:
+      context: ./sources/sub2api
+      args:
+        VERSION: 0.2.4
+        COMMIT: 5de5e2bed035d43591a2e10e51f420ef6a84eb98

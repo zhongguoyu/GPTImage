@@ -1,0 +1,99 @@
+name: ${COMPOSE_PROJECT_NAME:-gptimage}
+services:
+  postgres:
+    image: postgres:18-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: sub2api
+      POSTGRES_DB: sub2api
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Run setup.py init first}
+    volumes:
+      - postgres_data:/var/lib/postgresql
+    networks: [database]
+    healthcheck:
+      test: [CMD-SHELL, 'pg_isready -U sub2api -d sub2api']
+      interval: 10s
+      timeout: 5s
+      retries: 10
+  redis:
+    image: redis:8-alpine
+    restart: unless-stopped
+    environment:
+      REDIS_PASSWORD: ${REDIS_PASSWORD:?Run setup.py init first}
+    command: [sh, -c, 'exec redis-server --appendonly yes --requirepass "$$REDIS_PASSWORD"']
+    volumes:
+      - redis_data:/data
+    networks: [database]
+    healthcheck:
+      test: [CMD-SHELL, 'REDISCLI_AUTH="$$REDIS_PASSWORD" redis-cli ping | grep -q PONG']
+      interval: 10s
+      timeout: 5s
+      retries: 10
+  sub2api:
+    image: ${SUB2API_IMAGE:?Run setup.py init first}
+    restart: unless-stopped
+    ports:
+      - '127.0.0.1:${SUB2API_PORT:-8080}:8080'
+    volumes:
+      - ./runtime/sub2api:/app/data
+    environment:
+      AUTO_SETUP: 'true'
+      SERVER_HOST: 0.0.0.0
+      SERVER_PORT: '8080'
+      SERVER_MODE: release
+      DATABASE_HOST: postgres
+      DATABASE_PORT: '5432'
+      DATABASE_USER: sub2api
+      DATABASE_PASSWORD: ${POSTGRES_PASSWORD:?required}
+      DATABASE_DBNAME: sub2api
+      DATABASE_SSLMODE: disable
+      REDIS_HOST: redis
+      REDIS_PORT: '6379'
+      REDIS_PASSWORD: ${REDIS_PASSWORD:?required}
+      ADMIN_EMAIL: ${ADMIN_EMAIL:?required}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD:?required}
+      JWT_SECRET: ${JWT_SECRET:?required}
+      TOTP_ENCRYPTION_KEY: ${TOTP_ENCRYPTION_KEY:?required}
+      TZ: ${TZ:-Asia/Shanghai}
+    depends_on:
+      postgres: {condition: service_healthy}
+      redis: {condition: service_healthy}
+    networks: [database, ai]
+    healthcheck:
+      test: [CMD, wget, -q, -T, '5', -O, /dev/null, 'http://localhost:8080/health']
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 120s
+  chatgpt2api:
+    image: gptimage/chatgpt2api:local
+    build:
+      context: ./sources/chatgpt2api
+    restart: unless-stopped
+    ports:
+      - '127.0.0.1:${CHATGPT2API_PORT:-3000}:80'
+    environment:
+      STORAGE_BACKEND: json
+      CHATGPT2API_AUTH_KEY: ${CHATGPT2API_AUTH_KEY:?required}
+      SUB2API_ONLY: "1"
+      IMAGE_UPSTREAM_CONFIG: /app/data/sub2api-image-upstream.json
+      TZ: ${TZ:-Asia/Shanghai}
+    volumes:
+      - ./runtime/chatgpt2api/config.json:/app/config.json
+      - ./runtime/chatgpt2api/data:/app/data
+    depends_on:
+      sub2api: {condition: service_healthy}
+    networks: [ai]
+    healthcheck:
+      test: [CMD, /app/.venv/bin/python, -c, "import urllib.request; urllib.request.urlopen('http://127.0.0.1/version',timeout=5)"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
+networks:
+  ai: {}
+  database:
+    internal: true
+volumes:
+  postgres_data: {}
+  redis_data: {}

@@ -1,0 +1,21 @@
+{
+  "auth-key": "",
+  "base_url": "http://localhost:3000",
+  "image_storage": {
+    "enabled": true,
+    "mode": "local"
+  },
+  "image_retention_days": 15,
+  "log_retention_days": 30,
+  "refresh_account_interval_minute": 5,
+  "image_poll_timeout_secs": 120,
+  "image_account_concurrency": 3,
+  "image_min_free_mb": 500,
+  "image_parallel_generation": true,
+  "image_poll_initial_wait_secs": 10,
+  "image_poll_interval_secs": 10,
+  "proxy": {},
+  "proxy_runtime": {
+    "enabled": false
+  }
+}

@@ -1,0 +1,41 @@
+# Python-generated files
+__pycache__/
+*.py[oc]
+build/
+dist/
+wheels/
+*.egg-info
+web_dist
+# Virtual environments
+.venv
+.idea
+data
+config.json
+edit
+
+docker-compose-local.yml
+
+.claude/settings.local.json
+
+# Environment variables
+.env
+.env.local
+
+# Database files
+*.db
+*.sqlite
+*.sqlite3
+
+# Git cache
+git_cache/
+
+# Local git worktrees
+.worktrees/
+
+# 调试/测试输出目录
+loginwithpassword_*/
+logwithemailverifycode_*/
+test_batch_output/
+
+# 本地下游交接文档（不入库，手动分发给下游）
+docs/image-edit-integration-guide.md

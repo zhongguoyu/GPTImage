@@ -1,0 +1,5 @@
+{
+  "base_url": "http://sub2api:8080",
+  "api_key": "REPLACE_WITH_DEDICATED_GROUP_KEY",
+  "key_id": 0
+}
