@@ -25,5 +25,13 @@
     "local_modifications": false,
     "distribution": "official container image; source not vendored",
     "deployment": "compose.canvas.yaml"
+  },
+  "chatgpt2api_original_transport": {
+    "repository": "https://github.com/basketikun/chatgpt2api",
+    "commit": "dc105e51bd486bd75c8ef4f74be4bc4724bdfc33",
+    "license": "MIT",
+    "path": "sources/chatgpt2api/services/original_web_backend.py",
+    "local_modifications": false,
+    "integration": "Compatibility subclass in services/openai_backend_api.py; UI and services remain integrated fork."
   }
 }

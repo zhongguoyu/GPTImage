@@ -3249,3 +3249,41 @@ class OpenAIBackendAPI:
             })
         data.sort(key=lambda item: item["id"])
         return {"object": "list", "data": data}
+
+
+# Original basketikun web transport, pinned in upstream-lock.json.
+# Keep the surrounding scheduler, quota accounting, archive and Sub2API routes.
+from services import original_web_backend as _original_web
+
+_ForkOpenAIBackendAPI = OpenAIBackendAPI
+# Preserve exception identity used by the existing task/scheduler handlers.
+_original_web.InvalidAccessTokenError = InvalidAccessTokenError
+_original_web.ImageTaskError = ImageTaskError
+_original_web.ImagePollTimeoutError = ImagePollTimeoutError
+_original_web.ImageContentPolicyError = ImageContentPolicyError
+_original_web.ImageStreamHardTimeoutError = ImageStreamHardTimeoutError
+
+
+class OpenAIBackendAPI(_original_web.OpenAIBackendAPI, _ForkOpenAIBackendAPI):
+    """Original wire protocol with compatibility for local integration features."""
+
+    def __init__(self, access_token: str = "") -> None:
+        from services import sub2_gateway
+        if sub2_gateway.enabled():
+            sub2_gateway.unsupported("ChatGPT 网页后端")
+        _original_web.OpenAIBackendAPI.__init__(self, access_token)
+
+    def stream_conversation(self, messages=None, model="auto", prompt="", images=None,
+                            system_hints=None, thinking_effort="", comments=None, markup=False):
+        # Preserve point comments as explicit instructions in the original image request.
+        # The existing edit preprocessing has already painted markup into image pixels.
+        if comments:
+            for comment in comments:
+                prompt += (f"\nImage {comment.image_index + 1}, point "
+                           f"({comment.x * 100:.1f}%, {comment.y * 100:.1f}%): {comment.text}")
+        yield from super().stream_conversation(messages=messages, model=model, prompt=prompt,
+            images=images, system_hints=system_hints, thinking_effort=thinking_effort)
+
+    # These fixes concern response size/resource handling, not the web wire protocol.
+    _iter_codex_response_events = staticmethod(_ForkOpenAIBackendAPI._iter_codex_response_events)
+    iter_codex_image_response_events = _ForkOpenAIBackendAPI.iter_codex_image_response_events

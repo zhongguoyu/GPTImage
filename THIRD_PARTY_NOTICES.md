@@ -15,3 +15,5 @@ Sub2API 随附的 LGPL v3 文本引用 GPL v3，补充文本位于 `licenses/GPL
 ## 可选 Infinite Canvas
 
 `compose.canvas.yaml` 引用 [basketikun/infinite-canvas](https://github.com/basketikun/infinite-canvas) 官方容器镜像，固定版本和 digest 见 `upstream-lock.json`，许可证 MIT（Copyright (c) 2026 basketikun），副本见 `licenses/infinite-canvas-LICENSE.txt`。仓库未内嵌该组件源码或镜像字节；源码可按锁定 commit 获取。保留原作者归属，不将其声明为本项目原创。
+
+原生网页链路另使用 [basketikun/chatgpt2api](https://github.com/basketikun/chatgpt2api) 的锁定源码文件，位于 `sources/chatgpt2api/services/original_web_backend.py`。来源 commit 见 `upstream-lock.json` 的 `chatgpt2api_original_transport`，MIT 许可与原作者署名副本见 `licenses/chatgpt2api-original-LICENSE.txt`。兼容适配位于 `services/openai_backend_api.py`；其余源码仍保留既有 fork 来源说明。
