@@ -27,3 +27,29 @@ class Image25Tests(unittest.TestCase):
   for model in MODELS:
    req=SchedulerService._classify_image(None,{"model":model},Lane.IMAGE_GENERATION)
    self.assertEqual(req.model,model)
+
+ def test_native_catalog_exposes_both_models_without_gateway(self):
+  with patch("services.sub2_gateway.enabled",return_value=False),patch.object(openai_v1_models.model_catalog_service,"list_models",return_value={"data":[]}),patch.object(openai_v1_models.account_service,"list_accounts",return_value=[{"type":"Plus"}]):
+   ids={x["id"] for x in openai_v1_models.list_models()["data"]}
+   self.assertTrue(set(MODELS)<=ids)
+ def test_native_mapping_keeps_exact_models(self):
+  from services.openai_backend_api import OpenAIBackendAPI
+  backend=OpenAIBackendAPI.__new__(OpenAIBackendAPI)
+  for model in MODELS:
+   self.assertEqual(backend._image_model_settings(model),(model,""))
+ def test_native_prepare_and_generation_payload_keep_model(self):
+  from services.openai_backend_api import OpenAIBackendAPI
+  from services import original_web_backend as original
+  from unittest.mock import Mock
+  backend=OpenAIBackendAPI.__new__(OpenAIBackendAPI)
+  backend.base_url="https://example.invalid"
+  backend.session=Mock()
+  backend.session.post.return_value.status_code=200
+  backend.session.post.return_value.json.return_value={"token":"test"}
+  with patch.object(backend,"_image_headers",return_value={}):
+   for model in MODELS:
+    backend._prepare_image_conversation("test",Mock(),model)
+    self.assertEqual(backend.session.post.call_args.kwargs["json"]["model"],model)
+    for refs in ([],[{"file_id":"test","width":1,"height":1,"file_size":1,"mime_type":"image/png","file_name":"test.png"}]):
+     backend._start_image_generation("test",Mock(),"test",model,references=refs)
+     self.assertEqual(backend.session.post.call_args.kwargs["json"]["model"],model)

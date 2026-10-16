@@ -3284,6 +3284,15 @@ class OpenAIBackendAPI(_original_web.OpenAIBackendAPI, _ForkOpenAIBackendAPI):
         yield from super().stream_conversation(messages=messages, model=model, prompt=prompt,
             images=images, system_hints=system_hints, thinking_effort=thinking_effort)
 
+    def _image_model_settings(self, model: str) -> tuple[str, str]:
+        from utils.helper import IMAGE_25_MODELS
+        _, base_model = split_image_model(model)
+        if base_model in IMAGE_25_MODELS:
+            # Both prepare and generation/edit use this mapping. Never silently
+            # downgrade an explicit 2.5 choice to auto or the configured 2.0 model.
+            return base_model, ""
+        return super()._image_model_settings(model)
+
     # These fixes concern response size/resource handling, not the web wire protocol.
     _iter_codex_response_events = staticmethod(_ForkOpenAIBackendAPI._iter_codex_response_events)
     iter_codex_image_response_events = _ForkOpenAIBackendAPI.iter_codex_image_response_events
