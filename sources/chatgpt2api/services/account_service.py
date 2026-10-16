@@ -13,7 +13,7 @@ from typing import Any
 from urllib.parse import urlencode
 
 from services.routing_mode import guard_account_activity
-from services.account_metadata import native_metadata, display_metadata
+from services.account_metadata import native_metadata, display_metadata, merge_native_quota, record_native_debit
 from services.config import config
 from services.log_service import (
     LOG_TYPE_ACCOUNT,
@@ -1388,6 +1388,7 @@ class AccountService:
             current = self._accounts.get(access_token)
             if current is None:
                 return None
+            updates = merge_native_quota(current, updates)
             account = self._normalize_account({**current, **updates, "access_token": access_token})
             if account is None:
                 return None
@@ -1486,6 +1487,7 @@ class AccountService:
             if success:
                 next_item["success"] = int(next_item.get("success") or 0) + 1
                 next_item["quota"] = max(0, int(next_item.get("quota") or 0) - 1)
+                record_native_debit(next_item)
                 if next_item["quota"] == 0:
                     next_item["status"] = "限流"
                     next_item["restore_at"] = next_item.get("restore_at") or None
@@ -1529,6 +1531,10 @@ class AccountService:
             token = self._resolve_access_token_locked(access_token)
             account = self._accounts.get(token)
             if account is not None:
+                from services.account_metadata import native_quota_snapshot
+                saved = native_quota_snapshot(account)
+                if saved:
+                    account["native_quota_state"] = saved
                 account["account_info_updated_at"] = None
                 self._save_account(account)
 

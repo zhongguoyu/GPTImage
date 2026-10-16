@@ -53,6 +53,7 @@ def fetch(account):
         "account_info_source":"sub2api","account_info_updated_at":datetime.now(timezone.utc).isoformat(),
         "image_quota_known":False,"limits_progress":[],
         "quota":0,"restore_at":None,"default_model_slug":None,
+        "image_quota_reported":None,"image_quota_estimated":False,
         "sub2api_account_id":item["id"],"sub2api_schedulable":bool(item.get("schedulable")),
         "sub2api_usage":{k:extra.get(k) for k in ("codex_5h_used_percent","codex_7d_used_percent","codex_usage_updated_at")},
     }

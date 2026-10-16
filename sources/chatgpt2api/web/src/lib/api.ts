@@ -22,6 +22,8 @@ export type Account = {
   account_info_mode?: string;
   account_info_source?: string;
   image_quota_known?: boolean;
+  image_quota_reported?: number | null;
+  image_quota_estimated?: boolean;
   account_info_updated_at?: string;
   access_token: string;
   type: AccountType;

@@ -120,7 +120,7 @@ function formatAvailableQuota(accounts: Account[]) {
   if (accounts.some((account) => account.account_info_stale)) return "待刷新";
   if (accounts.some((account) => account.image_quota_known === false)) return "未知";
   const availableAccounts = accounts.filter((account) => account.status !== "禁用");
-  return String(availableAccounts.reduce((sum, account) => sum + Math.max(0, account.quota), 0));
+  return `${availableAccounts.reduce((sum, account) => sum + Math.max(0, account.quota), 0)}${availableAccounts.some((a) => a.image_quota_estimated) ? "（估算）" : ""}`;
 }
 
 function createId() {

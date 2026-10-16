@@ -103,7 +103,7 @@ function formatCompact(value: number) {
 function formatQuota(account: Account) {
   if (account.account_info_stale) return "待刷新";
   if (account.image_quota_known === false) return `未知（${account.account_info_source === "sub2api" ? "Sub2API" : "ChatGPT"} 未提供）`;
-  return String(Math.max(0, account.quota));
+  return `${Math.max(0, account.quota)}${account.image_quota_estimated ? "（本地估算）" : ""}`;
 }
 
 function formatRestoreAt(value?: string | null) {
@@ -134,7 +134,7 @@ function formatQuotaSummary(accounts: Account[]) {
   if (accounts.some((account) => account.account_info_stale)) return "待刷新";
   if (accounts.some((account) => account.image_quota_known === false)) return "未知";
   const availableAccounts = accounts.filter((account) => account.status === "正常");
-  return formatCompact(availableAccounts.reduce((sum, account) => sum + Math.max(0, account.quota), 0));
+  return `${formatCompact(availableAccounts.reduce((sum, account) => sum + Math.max(0, account.quota), 0))}${availableAccounts.some((a) => a.image_quota_estimated) ? "（估算）" : ""}`;
 }
 
 function maskToken(token?: string) {
