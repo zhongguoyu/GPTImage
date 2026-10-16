@@ -20,12 +20,12 @@ class CompleteRouteTests(unittest.TestCase):
     self.assertEqual(len(out["data"]),1)
  def test_refresh_uses_sub2_metadata_without_web_probe(self):
   updates={"status":"正常","account_info_source":"sub2api","image_quota_known":False}
-  obj=SimpleNamespace(get_account=lambda token:{"source_type":"codex"},_record_refresh_success=lambda token:None,
+  obj=SimpleNamespace(_mark_account_info_pending=lambda token:None,get_account=lambda token:{"source_type":"codex"},_record_refresh_success=lambda token:None,
       update_account=lambda token,data,quiet=False:data)
   with patch("services.sub2api_account_info.fetch",return_value=updates):
    self.assertEqual(AccountService.fetch_remote_info(obj,"test"),updates)
  def test_refresh_failure_is_not_silently_successful(self):
-  obj=SimpleNamespace(get_account=lambda token:{"source_type":"codex"})
+  obj=SimpleNamespace(_mark_account_info_pending=lambda token:None,get_account=lambda token:{"source_type":"codex"})
   with patch("services.sub2api_account_info.fetch",side_effect=RuntimeError("Sub2API unavailable")):
    with self.assertRaisesRegex(RuntimeError,"unavailable"):AccountService.fetch_remote_info(obj,"test")
 

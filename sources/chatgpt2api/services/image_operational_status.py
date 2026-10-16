@@ -59,7 +59,7 @@ def get_pool():
     if native_selected():
         from services.account_service import account_service
         return [{"id": i + 1, "status": "active" if a.get("status") == "正常" else "inactive",
-                 "schedulable": a.get("status") == "正常", "extra": {},
+                 "schedulable": a.get("status") == "正常" and not a.get("account_info_stale"), "extra": {},
                  "rate_limit_reset_at": a.get("restore_at")}
                 for i, a in enumerate(account_service.list_accounts())]
     with _lock:

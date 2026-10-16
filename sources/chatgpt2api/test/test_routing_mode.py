@@ -24,7 +24,7 @@ class RoutingModeTests(unittest.TestCase):
         self.assertFalse(sub2_gateway.enabled())
         self.assertFalse(image_upstream.configured())
         self.assertIsNone(fetch({"source_type":"codex"}))
-        self.assertEqual(json.loads(route.mode_path().read_text()), {"mode":"native"})
+        self.assertEqual(json.loads(route.mode_path().read_text())["mode"], "native")
         from api.ai import _scheduler_enabled
         from services.config import config
         with patch.object(config, "get_scheduler_settings_dict", return_value={"enabled":True}):

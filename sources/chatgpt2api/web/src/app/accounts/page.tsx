@@ -101,7 +101,8 @@ function formatCompact(value: number) {
 }
 
 function formatQuota(account: Account) {
-  if (account.image_quota_known === false) return "未知（Sub2API 未提供）";
+  if (account.account_info_stale) return "待刷新";
+  if (account.image_quota_known === false) return `未知（${account.account_info_source === "sub2api" ? "Sub2API" : "ChatGPT"} 未提供）`;
   return String(Math.max(0, account.quota));
 }
 
@@ -130,6 +131,7 @@ function formatRestoreAt(value?: string | null) {
 }
 
 function formatQuotaSummary(accounts: Account[]) {
+  if (accounts.some((account) => account.account_info_stale)) return "待刷新";
   if (accounts.some((account) => account.image_quota_known === false)) return "未知";
   const availableAccounts = accounts.filter((account) => account.status === "正常");
   return formatCompact(availableAccounts.reduce((sum, account) => sum + Math.max(0, account.quota), 0));
@@ -242,6 +244,8 @@ function AccountsPageContent() {
     didLoadRef.current = true;
     void loadAccounts();
     void loadModels();
+    const refreshOnFocus = () => { void loadAccounts(true); };
+    window.addEventListener("focus", refreshOnFocus);
 
     // 静默轮询账号列表：限流冷却倒计时、在途数等内存态需要周期刷新
     const pollTimer = setInterval(() => {
@@ -254,6 +258,7 @@ function AccountsPageContent() {
     return () => {
       if (progressRef.current) clearInterval(progressRef.current);
       clearInterval(pollTimer);
+      window.removeEventListener("focus", refreshOnFocus);
     };
   }, []);
 
@@ -277,10 +282,10 @@ function AccountsPageContent() {
 
   const summary = useMemo(() => {
     const total = accounts.length;
-    const active = accounts.filter((item) => item.status === "正常").length;
-    const limited = accounts.filter((item) => item.status === "限流").length;
-    const abnormal = accounts.filter((item) => item.status === "异常").length;
-    const disabled = accounts.filter((item) => item.status === "禁用").length;
+    const active = accounts.filter((item) => !item.account_info_stale && item.status === "正常").length;
+    const limited = accounts.filter((item) => !item.account_info_stale && item.status === "限流").length;
+    const abnormal = accounts.filter((item) => !item.account_info_stale && item.status === "异常").length;
+    const disabled = accounts.filter((item) => !item.account_info_stale && item.status === "禁用").length;
     const quota = formatQuotaSummary(accounts);
 
     return { total, active, limited, abnormal, disabled, quota };
@@ -376,8 +381,7 @@ function AccountsPageContent() {
     const baseLimited = baseAccountsList.filter((a) => a.status === "限流").length;
     const baseAbnormal = baseAccountsList.filter((a) => a.status === "异常").length;
     const baseDisabled = baseAccountsList.filter((a) => a.status === "禁用").length;
-    const baseNormalAccounts = baseAccountsList.filter((a) => a.status === "正常");
-    const baseQuotaNum = baseNormalAccounts.reduce((s, a) => s + Math.max(0, a.quota), 0);
+
 
     // 显示进度条（只显示当前任务，不含分类统计）
     const total = accessTokens.length;
@@ -433,7 +437,7 @@ function AccountsPageContent() {
                 limited: runningLimited,
                 abnormal: runningAbnormal,
                 disabled: runningDisabled,
-                quota: formatCompact(baseQuotaNum + (p.total_quota ?? 0)),
+                quota: "刷新中…",
               });
             }
           } catch (err) {
@@ -1120,6 +1124,7 @@ function AccountsPageContent() {
                         </td>
                         <td className="px-4 py-3">
                           {(() => {
+                            if (account.account_info_stale) return <Badge variant="secondary">待刷新</Badge>;
                             const rateLimitSecs = account.image_rate_limit_remaining_secs ?? 0;
                             if (rateLimitSecs > 0) {
                               return (
@@ -1162,6 +1167,8 @@ function AccountsPageContent() {
                           <Badge variant="info" className="rounded-md">
                             {formatQuota(account)}
                           </Badge>
+                          <div className="mt-1 text-xs text-muted-foreground">{account.account_info_mode === "sub2api" ? "Sub2API 网关" : "ChatGPT 原生"}</div>
+                          {!account.account_info_stale && account.account_info_mode === "sub2api" && <div className="text-xs text-muted-foreground" title="账户用量窗口，不等于剩余生图张数">用量：5h {typeof account.sub2api_usage?.codex_5h_used_percent === "number" ? `${account.sub2api_usage.codex_5h_used_percent}%` : "未知"} / 7d {typeof account.sub2api_usage?.codex_7d_used_percent === "number" ? `${account.sub2api_usage.codex_7d_used_percent}%` : "未知"}</div>}
                         </td>
                         <td className="px-4 py-3 text-xs leading-5 text-stone-500">
                           {(() => {

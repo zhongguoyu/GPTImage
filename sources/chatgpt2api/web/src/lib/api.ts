@@ -17,6 +17,9 @@ export type ImageStorageSettings = {
 };
 
 export type Account = {
+  sub2api_usage?: {codex_5h_used_percent?: number | null; codex_7d_used_percent?: number | null};
+  account_info_stale?: boolean;
+  account_info_mode?: string;
   account_info_source?: string;
   image_quota_known?: boolean;
   account_info_updated_at?: string;
@@ -83,6 +86,9 @@ type AccountMutationResponse = {
 };
 
 export type AccountRefreshResponse = {
+  sub2api_usage?: {codex_5h_used_percent?: number | null; codex_7d_used_percent?: number | null};
+  account_info_stale?: boolean;
+  account_info_mode?: string;
   account_info_source?: string;
   items: Account[];
   refreshed: number;

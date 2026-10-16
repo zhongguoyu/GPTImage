@@ -5,6 +5,9 @@ The application runs one ASGI worker. Do not use multiple workers with this guar
 import json
 import os
 import threading
+import time
+from contextlib import contextmanager
+from functools import wraps
 from pathlib import Path
 from fastapi import HTTPException
 
@@ -14,6 +17,51 @@ _active_requests = 0
 def mode_path():
     from services.config import DATA_DIR
     return Path(DATA_DIR) / "routing-mode.json"
+
+def switched_at():
+    try:
+        return float(json.loads(mode_path().read_text(encoding="utf-8")).get("switched_at", 0))
+    except FileNotFoundError:
+        return 0
+
+@contextmanager
+def account_activity():
+    global _active_requests
+    with _lock:
+        _active_requests += 1
+    try:
+        yield
+    finally:
+        with _lock:
+            _active_requests -= 1
+
+def guard_account_activity(fn):
+    @wraps(fn)
+    def guarded(*args, **kwargs):
+        with account_activity():
+            return fn(*args, **kwargs)
+    return guarded
+
+def switch_and_refresh(mode):
+    # Reserve the guard before releasing the switch lock; worker threads can then
+    # refresh concurrently, while another switch cannot mix metadata sources.
+    global _active_requests
+    with _lock:
+        result = switch(mode)
+        _active_requests += 1
+    try:
+        from services.account_service import account_service
+        refreshed = account_service.refresh_accounts(account_service.list_tokens(), quiet=True)
+        result["account_refresh"] = {"refreshed": refreshed.get("refreshed", 0),
+                                     "failed": len(refreshed.get("errors", []))}
+    except Exception:
+        # Routing has already changed. Do not claim the switch failed or expose
+        # upstream errors containing credentials; old metadata remains stale.
+        result["account_refresh"] = {"error": "账号同步失败，请在号池管理重试刷新"}
+    finally:
+        with _lock:
+            _active_requests -= 1
+    return result
 
 def explicit_mode():
     try:
@@ -70,7 +118,7 @@ def switch(mode):
         path = mode_path()
         path.parent.mkdir(parents=True, exist_ok=True)
         temporary = path.with_suffix(".tmp")
-        temporary.write_text(json.dumps({"mode": mode}) + "\n", encoding="utf-8")
+        temporary.write_text(json.dumps({"mode": mode, "switched_at": time.time()}) + "\n", encoding="utf-8")
         os.replace(temporary, path)
         from services.protocol.chat_completion_cache import chat_completion_cache
         chat_completion_cache.clear()

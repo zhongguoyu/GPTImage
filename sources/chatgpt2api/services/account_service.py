@@ -12,6 +12,8 @@ from threading import Condition, Lock, Thread
 from typing import Any
 from urllib.parse import urlencode
 
+from services.routing_mode import guard_account_activity
+from services.account_metadata import native_metadata, display_metadata
 from services.config import config
 from services.log_service import (
     LOG_TYPE_ACCOUNT,
@@ -1242,7 +1244,7 @@ class AccountService:
                 account = dict(item)
                 token = account.get("access_token") or ""
                 account["image_inflight"] = int(self._image_inflight.get(token, 0))
-                result.append(account)
+                result.append(display_metadata(account))
             return result
 
     def list_limited_tokens(self) -> list[str]:
@@ -1522,6 +1524,15 @@ class AccountService:
             if callable(close_current_thread):
                 close_current_thread()
 
+    def _mark_account_info_pending(self, access_token):
+        with self._lock:
+            token = self._resolve_access_token_locked(access_token)
+            account = self._accounts.get(token)
+            if account is not None:
+                account["account_info_updated_at"] = None
+                self._save_account(account)
+
+    @guard_account_activity
     def fetch_remote_info(
         self,
         access_token: str,
@@ -1533,6 +1544,7 @@ class AccountService:
         if not access_token:
             raise ValueError("access_token is required")
 
+        self._mark_account_info_pending(access_token)
         from services.sub2api_account_info import fetch as fetch_sub2api_info
         sub2api_info = fetch_sub2api_info(self.get_account(access_token) or {})
         if sub2api_info is not None:
@@ -1576,7 +1588,7 @@ class AccountService:
                     self.remove_invalid_token(active_token, event, quiet=quiet)
                 raise
         self._record_refresh_success(active_token)
-        return self.update_account(active_token, result, quiet=quiet)
+        return self.update_account(active_token, native_metadata(result), quiet=quiet)
 
     # ---- 刷新进度追踪 ----
 
@@ -1750,6 +1762,7 @@ class AccountService:
         with self._relogin_progress_lock:
             self._relogin_progress.pop(progress_id, None)
 
+    @guard_account_activity
     def refresh_accounts(
         self,
         access_tokens: list[str],
@@ -1981,13 +1994,13 @@ class AccountService:
         return items
 
     def get_stats(self) -> dict:
-        with self._lock:
-            items = list(self._accounts.values())
+        items = self.list_accounts()
+        fresh_items = [a for a in items if not a.get("account_info_stale")]
         total = len(items)
-        active = sum(1 for a in items if a.get("status") == "正常")
-        limited = sum(1 for a in items if a.get("status") == "限流")
-        abnormal = sum(1 for a in items if a.get("status") == "异常")
-        disabled = sum(1 for a in items if a.get("status") == "禁用")
+        active = sum(1 for a in fresh_items if a.get("status") == "正常")
+        limited = sum(1 for a in fresh_items if a.get("status") == "限流")
+        abnormal = sum(1 for a in fresh_items if a.get("status") == "异常")
+        disabled = sum(1 for a in fresh_items if a.get("status") == "禁用")
         total_quota = sum(max(0, int(a.get("quota") or 0)) for a in items if a.get("status") == "正常")
         total_success = sum(int(a.get("success") or 0) for a in items)
         total_fail = sum(int(a.get("fail") or 0) for a in items)
@@ -2002,7 +2015,8 @@ class AccountService:
             "limited": limited,
             "abnormal": abnormal,
             "disabled": disabled,
-            "total_quota": total_quota,
+            "total_quota": total_quota if all(a.get("image_quota_known") is True for a in items) else None,
+            "pending": sum(bool(a.get("account_info_stale")) for a in items),
             "total_success": total_success,
             "total_fail": total_fail,
             "by_type": by_type,

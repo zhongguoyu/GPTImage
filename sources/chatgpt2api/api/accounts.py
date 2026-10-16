@@ -220,6 +220,8 @@ def _attach_image_rate_limit(items: list[dict[str, Any]]) -> None:
     if not legacy and not breaker_remaining:
         return
     for item in items:
+        if item.get("account_info_stale") or item.get("account_info_mode") == "sub2api":
+            continue
         token = str(item.get("access_token") or "").strip()
         if not token:
             continue

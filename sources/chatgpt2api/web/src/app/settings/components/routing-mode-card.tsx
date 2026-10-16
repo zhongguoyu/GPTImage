@@ -4,7 +4,7 @@ import { httpRequest } from "@/lib/request";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
-type Routing = { mode: "native" | "sub2api"; explicit: boolean; image_upstream: boolean };
+type Routing = { mode: "native" | "sub2api"; explicit: boolean; image_upstream: boolean; account_refresh?: {refreshed?: number; failed?: number; error?: string} };
 export function RoutingModeCard() {
   const [current, setCurrent] = useState<Routing | null>(null);
   const [selected, setSelected] = useState<Routing["mode"]>("native");
@@ -19,7 +19,9 @@ export function RoutingModeCard() {
     setBusy(true); setMessage("");
     try {
       const value = await httpRequest<Routing>("/api/routing-mode", {method: "POST", body: {mode: selected}});
-      setCurrent(value); setMessage("已切换，新请求按所选链路执行。请重新读取模型列表。");
+      setCurrent(value);
+      const sync = value.account_refresh;
+      setMessage(`链路已切换。${sync?.error || `账号同步成功 ${sync?.refreshed ?? 0} 个，失败 ${sync?.failed ?? 0} 个。`}${sync?.failed ? "未同步账号显示待刷新，请到号池管理重试。" : ""}请重新读取模型列表。`);
     } catch (error) { setMessage(error instanceof Error ? error.message : "切换失败"); }
     finally { setBusy(false); }
   }
@@ -35,7 +37,7 @@ export function RoutingModeCard() {
       {current && !current.explicit && <p className="text-xs text-muted-foreground">尚未设置统一开关，当前沿用部署环境配置；保存后统一生效。</p>}
       <p className="text-xs text-muted-foreground">原生方案使用原账号池与协议实现；网关方案使用已配置的 Sub2API。模型和账号权限以对应上游为准，失败不会自动切换。请等当前任务完成后切换。</p>
       {message && <p role="status" className="text-sm">{message}</p>}
-      <Button disabled={busy || !current || (current.explicit && current.mode === selected)} onClick={() => void save()}>{busy ? "切换中…" : "保存并切换"}</Button>
+      <Button disabled={busy || !current || (current.explicit && current.mode === selected)} onClick={() => void save()}>{busy ? "切换并同步账号中…" : "保存并切换"}</Button>
     </CardContent>
   </Card>;
 }
