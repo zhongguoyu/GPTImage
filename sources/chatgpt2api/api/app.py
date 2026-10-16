@@ -67,6 +67,8 @@ def create_app() -> FastAPI:
                     close_storage()
 
     app = FastAPI(title="chatgpt2api", version=app_version, lifespan=lifespan)
+    from services.routing_mode import RoutingActivityMiddleware
+    app.add_middleware(RoutingActivityMiddleware)
     install_exception_handlers(app)
     app.add_middleware(
         CORSMiddleware,

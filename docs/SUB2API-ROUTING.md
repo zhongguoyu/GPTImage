@@ -18,3 +18,7 @@ GPTImage 的 Compose 默认设置 `SUB2API_ONLY=1`，与已有 `IMAGE_UPSTREAM_C
 PPT/PSD 网页文件导出、旧网页任务轮询恢复、ChatGPT 密码登录和 Clearance 在此模式下没有对应能力，明确返回不支持。需在 Sub2API 管理账号授权。所有残留网页客户端在创建时被阻止，不会偷偷回退网页服务。
 
 用户认证、业务额度、并发限制和调用日志仍由 ChatGPT2API 负责；上游账号选择由 Sub2API 负责。本地源码已包含补丁，常规部署使用仓库 Dockerfile 重新构建。上线前备份 Compose 和数据，确认新版本健康；回滚需使用兼容数据格式的旧镜像。
+
+## 双链路开关
+
+现在可在管理员“设置 → 基础配置 → 上游链路”选择 ChatGPT2API 原生或 Sub2API 网关。显式选择优先于环境变量，旧配置均保留；上文统一网关的行为适用于选择 Sub2API 时。详见 [切换说明](ROUTING-SWITCH.md)。

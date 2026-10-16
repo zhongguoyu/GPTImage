@@ -27,7 +27,7 @@ uv sync --frozen
 
 ```bash
 uv run --with pytest --with httpx python -m pytest -q \
-  test/test_sub2_gateway.py test/test_upstream_gallery.py test/test_sub2_image_upstream.py \
+  test/test_routing_mode.py test/test_sub2_gateway.py test/test_upstream_gallery.py test/test_sub2_image_upstream.py \
   test/test_sub2_complete_routes.py test/test_image25_routes.py \
   test/test_image_operational_status.py test/test_unlimited_quota.py \
   test/test_quota_service.py test/test_quota_api.py \

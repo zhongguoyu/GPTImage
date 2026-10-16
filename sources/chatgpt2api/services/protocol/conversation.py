@@ -280,6 +280,10 @@ def format_image_result(
     created: int | None = None,
     message: str = "",
 ) -> dict[str, Any]:
+    from services.routing_mode import native_selected
+    if native_selected() and any(item.get("b64_json") and not item.get("url") for item in items):
+        from services.protocol.image_upstream import _archive_items
+        items = [(_archive_items([item], {})[0] if item.get("b64_json") and not item.get("url") else item) for item in items]
     data: list[dict[str, Any]] = []
     for item in items:
         revised_prompt = str(item.get("revised_prompt") or prompt).strip() or prompt
@@ -323,7 +327,8 @@ def image_result_items_from_urls(
         and urlparse(url).path.startswith("/backend-api/estuary/content")
         for url in image_urls
     )
-    if response_format != "b64_json" and not authenticated_links:
+    from services.routing_mode import native_selected
+    if response_format != "b64_json" and not authenticated_links and not native_selected():
         return [{"url": url} for url in image_urls if str(url or "").strip()]
     return [
         {"b64_json": base64.b64encode(image_data).decode("ascii")}

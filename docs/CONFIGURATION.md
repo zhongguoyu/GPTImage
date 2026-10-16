@@ -54,3 +54,7 @@ Compose 默认 TZ=Asia/Shanghai；当前图片状态面板的“今日”口径�
 GitHub 推送保护识别到上游快照内置的 Google OAuth 客户端 ID/secret，发布版已移除这些硬编码值。源码构建若使用 Antigravity，需向 Sub2API 容器提供 `ANTIGRAVITY_OAUTH_CLIENT_ID` 与 `ANTIGRAVITY_OAUTH_CLIENT_SECRET`；Gemini CLI 使用 `GEMINI_CLI_OAUTH_CLIENT_ID` 与 `GEMINI_CLI_OAUTH_CLIENT_SECRET`，或管理端支持的自定义 OAuth 客户端配置。请使用自己有权使用的有效客户端，写入私有部署覆盖文件，不提交凭据。
 
 默认 Compose 固定的官方 Sub2API 镜像没有改变，此源码脱敏不会改变该镜像或现有云端服务。OpenAI 生图链路不依赖以上 Google OAuth 凭据。
+
+## 双链路开关
+
+现在可在管理员“设置 → 基础配置 → 上游链路”选择 ChatGPT2API 原生或 Sub2API 网关。显式选择优先于环境变量，旧配置均保留；上文统一网关的行为适用于选择 Sub2API 时。详见 [切换说明](ROUTING-SWITCH.md)。

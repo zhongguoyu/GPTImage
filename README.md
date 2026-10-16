@@ -107,3 +107,7 @@ GPTImage/
 - ChatGPT2API 原项目及两套项目的所有贡献者，完整说明见保留的上游 README 和许可证。
 
 两套源码仍分别遵循原许可证。本仓库新增部署脚本和文档使用 MIT，不能用根目录许可证替代 Sub2API 的 LGPL 许可。详见 [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md)。
+
+## 双链路开关
+
+现在可在管理员“设置 → 基础配置 → 上游链路”选择 ChatGPT2API 原生或 Sub2API 网关。显式选择优先于环境变量，旧配置均保留；上文统一网关的行为适用于选择 Sub2API 时。详见 [切换说明](docs/ROUTING-SWITCH.md)。

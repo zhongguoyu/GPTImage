@@ -5,6 +5,9 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 def _lookup(account):
+    from services.routing_mode import native_selected
+    if native_selected():
+        return None
     from services import sub2_gateway
     if sub2_gateway.enabled():
         sub2_gateway.settings()

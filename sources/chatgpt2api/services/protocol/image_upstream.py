@@ -9,7 +9,8 @@ from pathlib import Path
 from services.protocol.conversation import ImageGenerationError, ImageOutput, format_image_result
 
 def configured():
-    return bool(os.environ.get("IMAGE_UPSTREAM_CONFIG"))
+    from services.routing_mode import images_enabled
+    return images_enabled()
 
 def _archive_items(items, body):
     """Archive upstream bytes through the gallery's existing storage/index service."""

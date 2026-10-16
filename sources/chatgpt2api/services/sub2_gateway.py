@@ -8,7 +8,8 @@ from pathlib import Path
 from fastapi import HTTPException
 
 def enabled():
-    return os.environ.get("SUB2API_ONLY") == "1"
+    from services.routing_mode import sub2_enabled
+    return sub2_enabled()
 
 def settings():
     path = os.environ.get("IMAGE_UPSTREAM_CONFIG")

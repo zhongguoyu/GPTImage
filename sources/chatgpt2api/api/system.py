@@ -78,6 +78,18 @@ def create_router(app_version: str) -> APIRouter:
     async def get_version():
         return {"version": app_version}
 
+    @router.get("/api/routing-mode")
+    async def get_routing_mode(authorization: str | None = Header(default=None)):
+        require_admin(authorization)
+        from services.routing_mode import state
+        return state()
+
+    @router.post("/api/routing-mode")
+    async def set_routing_mode(body: SettingsUpdateRequest, authorization: str | None = Header(default=None)):
+        require_admin(authorization)
+        from services.routing_mode import switch
+        return switch(body.model_dump().get("mode"))
+
     @router.get("/api/settings")
     async def get_settings(authorization: str | None = Header(default=None)):
         require_admin(authorization)

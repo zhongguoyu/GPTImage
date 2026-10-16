@@ -55,6 +55,13 @@ def summarize(rows,now):
 
 def get_pool():
     global _pool_cache,_pool_at
+    from services.routing_mode import native_selected
+    if native_selected():
+        from services.account_service import account_service
+        return [{"id": i + 1, "status": "active" if a.get("status") == "正常" else "inactive",
+                 "schedulable": a.get("status") == "正常", "extra": {},
+                 "rate_limit_reset_at": a.get("restore_at")}
+                for i, a in enumerate(account_service.list_accounts())]
     with _lock:
         if _pool_cache is not None and time.time()-_pool_at<30:return _pool_cache
         from services.sub2api_service import _auth_headers
@@ -111,6 +118,9 @@ def status(model="gpt-image-2"):
         rows=[dict(r) for r in db.execute("SELECT status,task_type,created_at,updated_at,result_json,error,metadata_json FROM tasks WHERE task_type IN ('generate','edit')")]
     result=summarize(rows,now)
     result.update({"updated_at":now,"model":model,"scope":"ChatGPT2API 图片任务；不含直接调用 Sub2API 的请求","pool":None,"pool_error":None})
-    try:result["pool"]=pool_summary(get_pool(),model,now)
+    try:
+        result["pool"]=pool_summary(get_pool(),model,now)
+        from services.routing_mode import native_selected
+        if native_selected(): result["pool"]["checked_at"]=now
     except Exception:result["pool_error"]="账户池状态暂时无法获取"
     return result
